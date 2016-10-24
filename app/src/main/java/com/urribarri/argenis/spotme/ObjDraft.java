@@ -69,5 +69,4 @@ public class ObjDraft{
     public static Boolean draftValidation(int points){
         if (points > 2) {return true;} else {return false;}
     }
-
 }

@@ -47,10 +47,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         // Confirm button - HIDDEN
         final Button btn = (Button) findViewById(R.id.btn);
-        final Button btn_terr = (Button) findViewById(R.id.btn_terr);
-
-        // Confirm button - HIDDEN
         btn.setVisibility(View.INVISIBLE);
+        final Button btn_terr = (Button) findViewById(R.id.btn_terr);
         btn_terr.setVisibility(View.INVISIBLE);
 
         //Edition mode
@@ -65,8 +63,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void onMapClick(LatLng latLng) {
                         temp.add(latLng);
+                        //TODO: check if is possible to replace current polilyne on map
                         ObjDraft.makePolyline(mMap,temp);
-
                     }
                 });
 
@@ -94,20 +92,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        // To save terr made of 1 draft component or more
+        // To save terr
         btn_terr.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                v.setVisibility(View.INVISIBLE);
-                buildTerr();
+                boolean validDraft= ObjDraft.draftValidation(temp.size());
+                boolean validDraftList= ObjTerr.onedraftListValidation(pre_drafts.size());
 
+                if (validDraft == true) {
+                    if(validDraftList == true){
+                        v.setVisibility(View.INVISIBLE);
+                        buildTerr(1);// build one list with only one draft (1)
+
+                    } else {
+                        v.setVisibility(View.INVISIBLE);
+                        buildTerr(0);// build one list to make a terr (0)
+                    }
+
+                } else {
+                    Toast.makeText(MapsActivity.this,
+                            "Please set at least 3 points",
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
         mMap.setOnPolygonClickListener(new GoogleMap.OnPolygonClickListener() {
             @Override
             public void onPolygonClick(Polygon polygon) {
-                Log.i("<<<MENSAJE_SPOTME>>>", "onPolygonClick: "+polygon.getId());
+                Log.i("SPOTME", "onPolygonClick: "+polygon.getId());
             }
         });
     }
@@ -117,26 +130,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             ObjDraft.makePolygon(mMap,draft);// build polygon
 
             pre_drafts.add(draft);// add draft to pre_list(array)
-            Log.i("<<<MENSAJE_SPOTME>>>", "Added draft to pre_list of drafts:"+ pre_drafts.size());
+            Log.i("SPOTME", "Added draft to pre_drafts ArrayList:"+ pre_drafts.size());
 
             //Empty for new draft
             temp.clear();
         }
 
-    private void buildTerr(){
-            // TODO: confirmation msg "Theres only 1 component"
+    private void buildTerr(int quantity){
+        // TODO: confirmation msg "Theres only 1 component"
+        switch (quantity) {
+            case 1:
+                // TODO: call the AlertDialog to confirm
+                ObjTerr.onedraftListConfirmDialog(this.getApplicationContext());
 
-            ObjTerr terr = new ObjTerr(pre_drafts);// make draftLIST(terr)
+                buildDraft();
+                ObjTerr _terr= new ObjTerr(pre_drafts);
+                pre_drafts.clear();
+                pre_terr.add(_terr);
 
-            //Empty for new terr
-            pre_drafts.clear();
-            pre_terr.add(terr);// add terr to pre_list(array)
+                break;
 
-            Log.i("<<<MENSAJE_SPOTME>>>", "Added terr to pre_list of terr:" + pre_terr.size());
+            case 0:
+                ObjTerr terr = new ObjTerr(pre_drafts);// make draftLIST(terr)
 
-                    Toast.makeText(MapsActivity.this,
-                    "At least 1 component",
-                    Toast.LENGTH_SHORT).show();
+                //Empty for new terr
+                pre_drafts.clear();
+                pre_terr.add(terr);// add terr to pre_list(array)
+
+                Log.i("SPOTME", "Added terr to pre_terr ArrayList:" + pre_terr.size());
+
+                break;
+            }
         }
-
     }
