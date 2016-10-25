@@ -51,6 +51,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         final Button btn_terr = (Button) findViewById(R.id.btn_terr);
         btn_terr.setVisibility(View.INVISIBLE);
 
+
+
         //Edition mode
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             @Override
@@ -59,6 +61,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 btn_terr.setVisibility(View.VISIBLE);
 
                 temp.add(latLng);
+
                 mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
                     @Override
                     public void onMapClick(LatLng latLng) {
@@ -83,6 +86,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (ObjDraft.draftValidation(temp.size())== true){
                     v.setVisibility(View.INVISIBLE);
                     buildDraft();
+                    temp.clear();
 
                 } else {
                     Toast.makeText(MapsActivity.this,
@@ -97,21 +101,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
                 boolean validDraft= ObjDraft.draftValidation(temp.size());
-                boolean validDraftList= ObjTerr.onedraftListValidation(pre_drafts.size());
 
-                if (validDraft == true) {
-                    if(validDraftList == true){
+                // TODO: working with one draft terr; not working with > 1 draft terr
+                //
+
+                if (validDraft) {
+                    buildDraft();// to add valid draft to arraylist
+                    boolean validDraftList= ObjTerr.onedraftListValidation(pre_drafts.size());
+
+                    if(validDraftList){
                         v.setVisibility(View.INVISIBLE);
-                        buildTerr(1);// build one list with only one draft (1)
+                        btn.setVisibility(View.INVISIBLE);
+                        buildTerr("onedraftTerr");// build one list with only one draft (1)
+                        temp.clear();//TODO: RESET the working draft
 
                     } else {
                         v.setVisibility(View.INVISIBLE);
-                        buildTerr(0);// build one list to make a terr (0)
+                        btn.setVisibility(View.INVISIBLE);
+                        buildTerr("defaultTerr");// build one list to make a terr (0)
+                        temp.clear();//TODO: RESET the working draft
                     }
 
                 } else {
                     Toast.makeText(MapsActivity.this,
-                            "Please set at least 3 points",
+                            "Please set at least 3 points [other]",
                             Toast.LENGTH_SHORT).show();
                 }
             }
@@ -133,26 +146,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Log.i("SPOTME", "Added draft to pre_drafts ArrayList:"+ pre_drafts.size());
 
             //Empty for new draft
-            temp.clear();
+            //temp.clear();
         }
 
-    private void buildTerr(int quantity){
+    private void buildTerr(String typeof){
         // TODO: confirmation msg "Theres only 1 component"
-        switch (quantity) {
-            case 1:
+        switch (typeof) {
+            case "onedraftTerr":
                 // TODO: call the AlertDialog to confirm
-                ObjTerr.onedraftListConfirmDialog(this.getApplicationContext());
-
-                buildDraft();
                 ObjTerr _terr= new ObjTerr(pre_drafts);
                 pre_drafts.clear();
                 pre_terr.add(_terr);
 
                 break;
 
-            case 0:
+            case "defaultTerr":
+                //TODO: create each draft ???
                 ObjTerr terr = new ObjTerr(pre_drafts);// make draftLIST(terr)
 
+                this.buildDraft();
                 //Empty for new terr
                 pre_drafts.clear();
                 pre_terr.add(terr);// add terr to pre_list(array)
@@ -162,4 +174,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 break;
             }
         }
+
+
     }
