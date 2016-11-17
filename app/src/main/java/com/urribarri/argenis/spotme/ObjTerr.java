@@ -10,8 +10,8 @@ public class ObjTerr {
 
     ArrayList<ObjDraft> draftList= new ArrayList<ObjDraft>();
 
-    public ObjTerr(ArrayList<ObjDraft> draftList) {
-        this.draftList = draftList;
+    public ObjTerr(ArrayList<ObjDraft> list) {
+        draftList = list;
     }
 
     public ArrayList<ObjDraft> getDraftList() {
@@ -22,7 +22,9 @@ public class ObjTerr {
         return this.draftList.get(i);
     }
 
-    public static Boolean onedraftListValidation(int quantity){
-        if (quantity > 0) {return true;} else {return false;}
+    public static Boolean draftListValidation(int quantity){
+        if (quantity > 0) {return true;}
+        else {return false;}
     }
+
 }

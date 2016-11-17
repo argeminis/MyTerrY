@@ -1,7 +1,12 @@
 package com.urribarri.argenis.spotme;
 
+import android.content.Context;
+import android.widget.Toast;
+
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -38,12 +43,20 @@ public class ObjDraft{
 
     ArrayList<LatLng> userInput= new ArrayList<LatLng>();
 
-    public ObjDraft(ArrayList<LatLng> userInput) {
-        this.userInput = userInput;
+    public ObjDraft(ArrayList<LatLng> input){
+        userInput= input;
     }
 
     public ArrayList<LatLng> getUserInput() {
         return userInput;
+    }
+
+    public static Marker startPoint(GoogleMap map, LatLng position){
+        Marker marker = map.addMarker(new MarkerOptions()
+                .position(position)
+                .title("Start Point")
+                .snippet("Snippet for marker"));
+        return marker;
     }
 
     public static Polyline makePolyline (GoogleMap map, ArrayList<LatLng> input){
@@ -68,5 +81,11 @@ public class ObjDraft{
 
     public static Boolean draftValidation(int points){
         if (points > 2) {return true;} else {return false;}
+    }
+
+    public static void errorOnPoints(Context context){
+        Toast.makeText(context,
+                "Please set at least 3 points",
+                Toast.LENGTH_SHORT).show();
     }
 }

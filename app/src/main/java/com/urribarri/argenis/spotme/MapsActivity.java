@@ -1,7 +1,6 @@
 package com.urribarri.argenis.spotme;
 
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
@@ -14,7 +13,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polygon;
-import com.google.android.gms.maps.model.Polyline;
 
 import java.util.ArrayList;
 
@@ -45,13 +43,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap){
         mMap = googleMap;
+
         // Confirm button - HIDDEN
         final Button btn = (Button) findViewById(R.id.btn);
         btn.setVisibility(View.INVISIBLE);
         final Button btn_terr = (Button) findViewById(R.id.btn_terr);
         btn_terr.setVisibility(View.INVISIBLE);
-
-
 
         //Edition mode
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
@@ -60,6 +57,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 btn.setVisibility(View.VISIBLE);
                 btn_terr.setVisibility(View.VISIBLE);
 
+                ObjDraft.startPoint(mMap,latLng);
                 temp.add(latLng);
 
                 mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
@@ -79,19 +77,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setMinZoomPreference(13);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(llissa));
 
+        // I/Choreographer: Skipped 30 frames!  The application may be doing too much work on its main thread.
+
         // To save draft component
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //mMap.setOnMapLongClickListener(omlcl);// set long listener ON
                 if (ObjDraft.draftValidation(temp.size())== true){
                     v.setVisibility(View.INVISIBLE);
                     buildDraft();
-                    temp.clear();
 
                 } else {
-                    Toast.makeText(MapsActivity.this,
-                            "Please set at least 3 points",
-                            Toast.LENGTH_SHORT).show();
+                    ObjDraft.errorOnPoints(getBaseContext());
                 }
             }
         });
@@ -100,32 +98,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         btn_terr.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean validDraft= ObjDraft.draftValidation(temp.size());
 
-                // TODO: working with one draft terr; not working with > 1 draft terr
-                //
+                //Check if temp has more than 3 points; if so buildDraft and then continue
+                if (ObjDraft.draftValidation(temp.size())== true){
+                    buildDraft();
 
-                if (validDraft) {
-                    buildDraft();// to add valid draft to arraylist
-                    boolean validDraftList= ObjTerr.onedraftListValidation(pre_drafts.size());
+                    //----------------------
+                    if (ObjTerr.draftListValidation(pre_drafts.size())== true){
+                        switch (pre_drafts.size()) {
+                            case 0:
+                                //Check temp size
+                                if (ObjDraft.draftValidation(temp.size())== true) {
+                                    btn.setVisibility(View.INVISIBLE);
+                                    v.setVisibility(View.INVISIBLE);
+                                    buildTerr("onedraftTerrQuick");// NOT HAVING a draft builded
+                                } else {
+                                    ObjDraft.errorOnPoints(getBaseContext());
+                                }
+                                break;
 
-                    if(validDraftList){
-                        v.setVisibility(View.INVISIBLE);
-                        btn.setVisibility(View.INVISIBLE);
-                        buildTerr("onedraftTerr");// build one list with only one draft (1)
-                        temp.clear();//TODO: RESET the working draft
+                            case 1:
+                                btn.setVisibility(View.INVISIBLE);
+                                v.setVisibility(View.INVISIBLE);
+                                buildTerr("onedraftTerr");// HAVING one draft builded
 
+                                break;
+
+                            default:
+                                buildTerr("defaultTerr");// build one list to make a terr (0)
+                                //TODO: RESET the working draft
+                                btn.setVisibility(View.INVISIBLE);
+                                v.setVisibility(View.INVISIBLE);
+
+                                break;
+                        }
                     } else {
-                        v.setVisibility(View.INVISIBLE);
-                        btn.setVisibility(View.INVISIBLE);
-                        buildTerr("defaultTerr");// build one list to make a terr (0)
-                        temp.clear();//TODO: RESET the working draft
+                        ObjDraft.errorOnPoints(getBaseContext());
                     }
-
                 } else {
-                    Toast.makeText(MapsActivity.this,
-                            "Please set at least 3 points [other]",
-                            Toast.LENGTH_SHORT).show();
+                    ObjDraft.errorOnPoints(getBaseContext());
                 }
             }
         });
@@ -136,44 +147,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.i("SPOTME", "onPolygonClick: "+polygon.getId());
             }
         });
+
     }
 
     private void buildDraft(){
-            ObjDraft draft= new ObjDraft(temp);// feed with array
-            ObjDraft.makePolygon(mMap,draft);// build polygon
-
-            pre_drafts.add(draft);// add draft to pre_list(array)
-            Log.i("SPOTME", "Added draft to pre_drafts ArrayList:"+ pre_drafts.size());
-
-            //Empty for new draft
-            //temp.clear();
-        }
+        ObjDraft objDraft= new ObjDraft((ArrayList<LatLng>) temp.clone());
+        pre_drafts.add(objDraft);
+        temp.clear();
+    }
 
     private void buildTerr(String typeof){
         // TODO: confirmation msg "Theres only 1 component"
         switch (typeof) {
+            case "onedraftTerrQuick":
+                // TODO: call the AlertDialog to confirm
+                buildDraft();
+
+                ObjTerr _terr= new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());// feed with array
+                pre_terr.add(_terr);
+                pre_drafts.clear();
+
+                break;
+
             case "onedraftTerr":
                 // TODO: call the AlertDialog to confirm
-                ObjTerr _terr= new ObjTerr(pre_drafts);
+                ObjTerr terr_ = new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());
+                pre_terr.add(terr_);
                 pre_drafts.clear();
-                pre_terr.add(_terr);
 
                 break;
 
             case "defaultTerr":
-                //TODO: create each draft ???
-                ObjTerr terr = new ObjTerr(pre_drafts);// make draftLIST(terr)
-
-                this.buildDraft();
-                //Empty for new terr
-                pre_drafts.clear();
+                ObjTerr terr = new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());// make draftLIST(terr)
                 pre_terr.add(terr);// add terr to pre_list(array)
-
-                Log.i("SPOTME", "Added terr to pre_terr ArrayList:" + pre_terr.size());
+                pre_drafts.clear();//Empty for new terr
 
                 break;
             }
         }
-
-
     }
