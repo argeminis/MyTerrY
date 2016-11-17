@@ -82,10 +82,4 @@ public class ObjDraft{
     public static Boolean draftValidation(int points){
         if (points > 2) {return true;} else {return false;}
     }
-
-    public static void errorOnPoints(Context context){
-        Toast.makeText(context,
-                "Please set at least 3 points",
-                Toast.LENGTH_SHORT).show();
-    }
 }

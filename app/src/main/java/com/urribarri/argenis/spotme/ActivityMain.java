@@ -15,7 +15,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity
+public class ActivityMain extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
 
     @Override
@@ -83,31 +83,31 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            Toast.makeText(MainActivity.this,
+            Toast.makeText(ActivityMain.this,
                     "Actividad0",
                     Toast.LENGTH_SHORT).show();
             // Handle the camera action
         } else if (id == R.id.nav_gallery) {
-            Toast.makeText(MainActivity.this,
+            Toast.makeText(ActivityMain.this,
                     "Actividad1",
                     Toast.LENGTH_SHORT).show();
-            Intent intentMaps = new Intent(MainActivity.this, MapsActivity.class);
+            Intent intentMaps = new Intent(ActivityMain.this, ActivityMaps.class);
             startActivity(intentMaps);
 
         } else if (id == R.id.nav_slideshow) {
-            Toast.makeText(MainActivity.this,
+            Toast.makeText(ActivityMain.this,
                     "Actividad2",
                     Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_manage) {
-            Toast.makeText(MainActivity.this,
+            Toast.makeText(ActivityMain.this,
                     "Actividad3",
                     Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_share) {
-            Toast.makeText(MainActivity.this,
+            Toast.makeText(ActivityMain.this,
                     "Actividad4",
                     Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_send) {
-            Toast.makeText(MainActivity.this,
+            Toast.makeText(ActivityMain.this,
                     "Actividad5",
                     Toast.LENGTH_SHORT).show();
         }

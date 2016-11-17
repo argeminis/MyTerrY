@@ -5,7 +5,6 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -16,7 +15,7 @@ import com.google.android.gms.maps.model.Polygon;
 
 import java.util.ArrayList;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private ArrayList<LatLng> temp= new ArrayList<LatLng>();//vertex list
@@ -34,6 +33,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
 
     }
+
     /**
      * This is where we can add markers or lines, add listeners or move the camera.
      * If Google Play services is not installed on the device, the user will be prompted to install
@@ -50,46 +50,51 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         final Button btn_terr = (Button) findViewById(R.id.btn_terr);
         btn_terr.setVisibility(View.INVISIBLE);
 
-        //Edition mode
-        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
-            @Override
-            public void onMapLongClick(LatLng latLng) {
-                btn.setVisibility(View.VISIBLE);
-                btn_terr.setVisibility(View.VISIBLE);
-
-                ObjDraft.startPoint(mMap,latLng);
-                temp.add(latLng);
-
-                mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+        // Map Listeners on variables [ON/OFF]
+        final GoogleMap.OnMapClickListener onMapClickListener=
+                new GoogleMap.OnMapClickListener() {
                     @Override
                     public void onMapClick(LatLng latLng) {
+                        mMap.setOnMapLongClickListener(null);// [OFF]
                         temp.add(latLng);
-                        //TODO: check if is possible to replace current polilyne on map
                         ObjDraft.makePolyline(mMap,temp);
-                    }
-                });
 
-            }
-        });
+                    }
+                };
+
+        final GoogleMap.OnMapLongClickListener onMapLongClickListener=
+                new GoogleMap.OnMapLongClickListener() {
+                    @Override
+                    public void onMapLongClick(LatLng latLng) {
+                        ObjDraft.startPoint(mMap,latLng);
+                        temp.add(latLng);
+                        btn.setVisibility(View.VISIBLE);
+                        btn_terr.setVisibility(View.VISIBLE);
+
+                        mMap.setOnMapClickListener(onMapClickListener);
+                    }
+                };
 
         // Initial point; TODO: customize
         LatLng llissa = new LatLng(41.6, 2.24);
         mMap.setMinZoomPreference(13);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(llissa));
 
+        // Activating EditMode
+        mMap.setOnMapLongClickListener(onMapLongClickListener); // [ON]
         // I/Choreographer: Skipped 30 frames!  The application may be doing too much work on its main thread.
 
         // To save draft component
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //mMap.setOnMapLongClickListener(omlcl);// set long listener ON
                 if (ObjDraft.draftValidation(temp.size())== true){
                     v.setVisibility(View.INVISIBLE);
                     buildDraft();
+                    mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                 } else {
-                    ObjDraft.errorOnPoints(getBaseContext());
+                    ManagerError.errorOnDraftPoints(getBaseContext());
                 }
             }
         });
@@ -98,29 +103,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         btn_terr.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                //Check if temp has more than 3 points; if so buildDraft and then continue
-                if (ObjDraft.draftValidation(temp.size())== true){
+                // If there's an incomplete valid draft...
+                if (ObjDraft.draftValidation(temp.size())== true) {
                     buildDraft();
 
-                    //----------------------
-                    if (ObjTerr.draftListValidation(pre_drafts.size())== true){
+                    //... then continue to the corresponding buildTerr
+                    if (ObjTerr.draftListValidation(pre_drafts.size()) == true) {
                         switch (pre_drafts.size()) {
-                            case 0:
-                                //Check temp size
-                                if (ObjDraft.draftValidation(temp.size())== true) {
+                            case 0: // ...NOT HAVING a draft builded
+                                if (ObjDraft.draftValidation(temp.size()) == true) {
                                     btn.setVisibility(View.INVISIBLE);
                                     v.setVisibility(View.INVISIBLE);
-                                    buildTerr("onedraftTerrQuick");// NOT HAVING a draft builded
+                                    buildTerr("onedraftTerrQuick");
+                                    mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
+
                                 } else {
-                                    ObjDraft.errorOnPoints(getBaseContext());
+                                    ManagerError.errorOnDraftPoints(getBaseContext());
                                 }
                                 break;
 
-                            case 1:
+                            case 1: // ...HAVING one draft builded
                                 btn.setVisibility(View.INVISIBLE);
                                 v.setVisibility(View.INVISIBLE);
-                                buildTerr("onedraftTerr");// HAVING one draft builded
+                                buildTerr("onedraftTerr");
+                                mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                                 break;
 
@@ -129,14 +135,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 //TODO: RESET the working draft
                                 btn.setVisibility(View.INVISIBLE);
                                 v.setVisibility(View.INVISIBLE);
+                                mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                                 break;
                         }
                     } else {
-                        ObjDraft.errorOnPoints(getBaseContext());
+                        ManagerError.errorOnDraftQuantity(getBaseContext());
                     }
+
+                //...when builded drafts are to compound a terr
+                } else if ((temp.size()==0)&(pre_drafts.size()>0)){
+                    buildTerr("defaultTerr");// build one list to make a terr (0)
+                    btn.setVisibility(View.INVISIBLE);
+                    v.setVisibility(View.INVISIBLE);
+                    mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
+
                 } else {
-                    ObjDraft.errorOnPoints(getBaseContext());
+                    ManagerError.errorOnDraftPoints(getBaseContext());
                 }
             }
         });
@@ -157,32 +172,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void buildTerr(String typeof){
-        // TODO: confirmation msg "Theres only 1 component"
         switch (typeof) {
             case "onedraftTerrQuick":
-                // TODO: call the AlertDialog to confirm
                 buildDraft();
 
-                ObjTerr _terr= new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());// feed with array
+                ObjTerr _terr= new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());
                 pre_terr.add(_terr);
                 pre_drafts.clear();
+
+                String _output= ManagerParser.JSONType(_terr);
+                ManagerError.log("onedraftTerrQuick",_output);
 
                 break;
 
             case "onedraftTerr":
-                // TODO: call the AlertDialog to confirm
                 ObjTerr terr_ = new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());
                 pre_terr.add(terr_);
                 pre_drafts.clear();
 
+                String output_= ManagerParser.JSONType(terr_);
+                ManagerError.log("onedraftTerr",output_);
+
                 break;
 
             case "defaultTerr":
-                ObjTerr terr = new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());// make draftLIST(terr)
-                pre_terr.add(terr);// add terr to pre_list(array)
-                pre_drafts.clear();//Empty for new terr
+                ObjTerr terr = new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());
+                pre_terr.add(terr);
+                pre_drafts.clear();
+
+                String output= ManagerParser.JSONType(terr);
+                ManagerError.log("onedraftTerr",output);
 
                 break;
             }
         }
-    }
+}

@@ -1,5 +1,8 @@
 package com.urribarri.argenis.spotme;
 
+import android.content.Context;
+import android.widget.Toast;
+
 import java.util.ArrayList;
 
 /**
@@ -26,5 +29,4 @@ public class ObjTerr {
         if (quantity > 0) {return true;}
         else {return false;}
     }
-
 }
