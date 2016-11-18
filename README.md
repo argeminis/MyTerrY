@@ -8,6 +8,7 @@ The basic functional specs are:
     Include notes inside the territory (return visits excluded)
     Have a Search street function to find it faster the first time attending the territory
     Share a snapshot of the territory
+    Multilanguage support
 
 Future versions:
 
