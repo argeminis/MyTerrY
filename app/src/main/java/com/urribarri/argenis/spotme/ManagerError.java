@@ -9,6 +9,8 @@ import android.widget.Toast;
  */
 
 public class ManagerError {
+
+    //com
     public static void log(String label, String value){
         Log.i("*****SPOTME*****", label+" ||----->> "+value);
     }

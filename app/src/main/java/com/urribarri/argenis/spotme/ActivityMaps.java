@@ -16,6 +16,7 @@ import com.google.android.gms.maps.model.Polygon;
 import java.util.ArrayList;
 
 public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback {
+    // Comment
 
     private GoogleMap mMap;
     private ArrayList<LatLng> temp= new ArrayList<LatLng>();//vertex list

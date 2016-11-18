@@ -10,11 +10,17 @@ import java.util.ArrayList;
  */
 
 public class ObjTerr {
+    //com
 
     ArrayList<ObjDraft> draftList= new ArrayList<ObjDraft>();
 
     public ObjTerr(ArrayList<ObjDraft> list) {
         draftList = list;
+    }
+
+    public static Boolean draftListValidation(int quantity){
+        if (quantity > 0) {return true;}
+        else {return false;}
     }
 
     public ArrayList<ObjDraft> getDraftList() {
@@ -23,10 +29,5 @@ public class ObjTerr {
 
     public ObjDraft getDraft(int i) {
         return this.draftList.get(i);
-    }
-
-    public static Boolean draftListValidation(int quantity){
-        if (quantity > 0) {return true;}
-        else {return false;}
     }
 }

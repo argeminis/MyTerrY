@@ -40,15 +40,12 @@ import java.util.ArrayList;
  0% - 00
  */
 public class ObjDraft{
+    //com
 
     ArrayList<LatLng> userInput= new ArrayList<LatLng>();
 
     public ObjDraft(ArrayList<LatLng> input){
         userInput= input;
-    }
-
-    public ArrayList<LatLng> getUserInput() {
-        return userInput;
     }
 
     public static Marker startPoint(GoogleMap map, LatLng position){
@@ -81,5 +78,9 @@ public class ObjDraft{
 
     public static Boolean draftValidation(int points){
         if (points > 2) {return true;} else {return false;}
+    }
+
+    public ArrayList<LatLng> getUserInput() {
+        return userInput;
     }
 }

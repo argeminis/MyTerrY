@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 public class ManagerParser {
 
     // convert User object user to JSON format
+    //com
 
     public static String JSONType(Object object){
         Gson gson = new Gson();
