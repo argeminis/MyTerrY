@@ -1,10 +1,12 @@
 package com.urribarri.argenis.spotme;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -16,8 +18,8 @@ import com.google.android.gms.maps.model.Polygon;
 import java.util.ArrayList;
 
 public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback {
-    // Comment
 
+    private final static int INFO = 0;// request code - ActivityforResult
     private GoogleMap mMap;
     private ArrayList<LatLng> temp= new ArrayList<LatLng>();//vertex list
     private ArrayList<ObjDraft> pre_drafts = new ArrayList<ObjDraft>();//component list
@@ -51,15 +53,20 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
         final Button btn_terr = (Button) findViewById(R.id.btn_terr);
         btn_terr.setVisibility(View.INVISIBLE);
 
+        /** TODO: read to see if there are terr to build */
+
         // Map Listeners on variables [ON/OFF]
         final GoogleMap.OnMapClickListener onMapClickListener=
                 new GoogleMap.OnMapClickListener() {
                     @Override
                     public void onMapClick(LatLng latLng) {
+                        Log.i("SPOTME", "--------------------[onMapClick]");
+
                         mMap.setOnMapLongClickListener(null);// [OFF]
                         temp.add(latLng);
+                        if (ObjDraft.draftValidation(temp.size()) == true)
+                            btn.setVisibility(View.VISIBLE);
                         ObjDraft.makePolyline(mMap,temp);
-
                     }
                 };
 
@@ -67,12 +74,13 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                 new GoogleMap.OnMapLongClickListener() {
                     @Override
                     public void onMapLongClick(LatLng latLng) {
-                        ObjDraft.startPoint(mMap,latLng);
+                        Log.i("SPOTME", "--------------------[onMapLongClick]");
+                        mMap.setOnMapLongClickListener(null);
+                        // if longclick not null
                         temp.add(latLng);
-                        btn.setVisibility(View.VISIBLE);
                         btn_terr.setVisibility(View.VISIBLE);
-
                         mMap.setOnMapClickListener(onMapClickListener);
+
                     }
                 };
 
@@ -92,7 +100,6 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                 if (ObjDraft.draftValidation(temp.size())== true){
                     v.setVisibility(View.INVISIBLE);
                     buildDraft();
-                    mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                 } else {
                     ManagerError.errorOnDraftPoints(getBaseContext());
@@ -127,6 +134,9 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                                 btn.setVisibility(View.INVISIBLE);
                                 v.setVisibility(View.INVISIBLE);
                                 buildTerr("onedraftTerr");
+
+                                /** TODO: ActivityForResult - SAVE (title...)*/
+                                afr();
                                 mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                                 break;
@@ -136,6 +146,9 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                                 //TODO: RESET the working draft
                                 btn.setVisibility(View.INVISIBLE);
                                 v.setVisibility(View.INVISIBLE);
+
+                                /** TODO: ActivityForResult - SAVE (title...)*/
+                                afr();
                                 mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                                 break;
@@ -149,6 +162,9 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                     buildTerr("defaultTerr");// build one list to make a terr (0)
                     btn.setVisibility(View.INVISIBLE);
                     v.setVisibility(View.INVISIBLE);
+
+                    /** TODO: ActivityForResult - SAVE (title...)*/
+                    afr();
                     mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                 } else {
@@ -166,9 +182,44 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    /**ActivityForResult */
+    private void afr(){
+        Intent i = new Intent(ActivityMaps.this, ActivityMapsSave.class);
+        startActivityForResult(i, INFO);
+    }
+
+    /**TODO: [unfinished]To retrieve further data when finishing a terr and make the persistence */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        // Comprobamos si el resultado de la segunda actividad es "RESULT_CANCELED".
+        if (resultCode == RESULT_CANCELED) {
+            // Si es así mostramos mensaje de cancelado por pantalla.
+            Log.i("SPOTME", "");
+        } else {
+            // De lo contrario, recogemos el resultado de la segunda actividad.
+            String resultado = data.getExtras().getString("RESULTADO");
+            // Y tratamos el resultado en función de si se lanzó para rellenar el
+            // nombre o el apellido.
+            switch (requestCode) {
+                case 0:
+                    Toast.makeText(ActivityMaps.this, resultado,
+                            Toast.LENGTH_LONG).show();
+                    break;
+
+                default:
+                    Toast.makeText(ActivityMaps.this, "NO SE HA ENVIADO NADA",
+                            Toast.LENGTH_LONG).show();
+                    break;
+            }
+        }
+    }
+
     private void buildDraft(){
         ObjDraft objDraft= new ObjDraft((ArrayList<LatLng>) temp.clone());
         pre_drafts.add(objDraft);
+
+        ObjDraft.makePolygon(mMap,objDraft);
         temp.clear();
     }
 

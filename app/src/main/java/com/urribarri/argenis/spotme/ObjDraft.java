@@ -1,8 +1,5 @@
 package com.urribarri.argenis.spotme;
 
-import android.content.Context;
-import android.widget.Toast;
-
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -48,11 +45,9 @@ public class ObjDraft{
         userInput= input;
     }
 
-    public static Marker startPoint(GoogleMap map, LatLng position){
+    public static Marker point(GoogleMap map, LatLng position){
         Marker marker = map.addMarker(new MarkerOptions()
-                .position(position)
-                .title("Start Point")
-                .snippet("Snippet for marker"));
+                .position(position));
         return marker;
     }
 
