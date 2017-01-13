@@ -2,8 +2,6 @@ package com.urribarri.argenis.spotme;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -36,19 +34,13 @@ import java.util.ArrayList;
  5% - 0D
  0% - 00
  */
-public class ObjDraft{
-    //com
+public class ObjDraft {
 
+    GeoJSONBuilder geoJSONBuilder;
     ArrayList<LatLng> userInput= new ArrayList<LatLng>();
 
     public ObjDraft(ArrayList<LatLng> input){
         userInput= input;
-    }
-
-    public static Marker point(GoogleMap map, LatLng position){
-        Marker marker = map.addMarker(new MarkerOptions()
-                .position(position));
-        return marker;
     }
 
     public static Polyline makePolyline (GoogleMap map, ArrayList<LatLng> input){

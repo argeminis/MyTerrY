@@ -8,12 +8,18 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.cocoahero.android.geojson.Feature;
+import com.cocoahero.android.geojson.Geometry;
+import com.cocoahero.android.geojson.Position;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polygon;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 
@@ -24,6 +30,7 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
     private ArrayList<LatLng> temp= new ArrayList<LatLng>();//vertex list
     private ArrayList<ObjDraft> pre_drafts = new ArrayList<ObjDraft>();//component list
     private ArrayList<ObjTerr> pre_terr= new ArrayList<ObjTerr>();// list of component_list
+    private ArrayList<Position> pos= new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +71,8 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
 
                         mMap.setOnMapLongClickListener(null);// [OFF]
                         temp.add(latLng);
+                        p(latLng);
+
                         if (ObjDraft.draftValidation(temp.size()) == true)
                             btn.setVisibility(View.VISIBLE);
                         ObjDraft.makePolyline(mMap,temp);
@@ -78,13 +87,15 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                         mMap.setOnMapLongClickListener(null);
                         // if longclick not null
                         temp.add(latLng);
+                        p(latLng);
+
                         btn_terr.setVisibility(View.VISIBLE);
                         mMap.setOnMapClickListener(onMapClickListener);
 
                     }
                 };
 
-        // Initial point; TODO: customize
+        // Initial toposition; TODO: customize
         LatLng llissa = new LatLng(41.6, 2.24);
         mMap.setMinZoomPreference(13);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(llissa));
@@ -149,6 +160,7 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
 
                                 /** TODO: ActivityForResult - SAVE (title...)*/
                                 afr();
+
                                 mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                                 break;
@@ -177,9 +189,16 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPolygonClick(Polygon polygon) {
                 Log.i("SPOTME", "onPolygonClick: "+polygon.getId());
+                Log.i("SPOTME", "onPolygonClick: "+polygon.getPoints().toString());
             }
         });
 
+    }
+
+    // -------------------
+    /**Parse as position */
+    private void p(LatLng latLng){
+        pos.add(GeoJSONBuilder.toposition(latLng));
     }
 
     /**ActivityForResult */
@@ -187,6 +206,8 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
         Intent i = new Intent(ActivityMaps.this, ActivityMapsSave.class);
         startActivityForResult(i, INFO);
     }
+
+    // -------------------
 
     /**TODO: [unfinished]To retrieve further data when finishing a terr and make the persistence */
     @Override
@@ -215,12 +236,31 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    /**To make draft */
     private void buildDraft(){
         ObjDraft objDraft= new ObjDraft((ArrayList<LatLng>) temp.clone());
         pre_drafts.add(objDraft);
 
+        pos.add(pos.get(0));/**GeoJSON implicitly requires that the last coordinate is the same as the first*/
+
+        //TODO: working implementation of the framework (GeoJSON)
+        Object polygon= GeoJSONBuilder.geometry("Polygon",pos);
+
+        Feature feature = new Feature((Geometry) polygon);
+        feature.setIdentifier("MyIdentifier");
+        feature.setProperties(new JSONObject());
+
+        // Convert to formatted JSONObject
+        try {
+            JSONObject geoJSON = feature.toJSON();
+            Log.i("SPOTME:", String.valueOf(geoJSON));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         ObjDraft.makePolygon(mMap,objDraft);
         temp.clear();
+        pos.clear();
     }
 
     private void buildTerr(String typeof){
@@ -243,6 +283,7 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                 pre_drafts.clear();
 
                 String output_= ManagerParser.JSONType(terr_);
+
                 ManagerError.log("onedraftTerr",output_);
 
                 break;

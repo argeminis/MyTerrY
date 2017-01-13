@@ -1,8 +1,5 @@
 package com.urribarri.argenis.spotme;
 
-import android.content.Context;
-import android.widget.Toast;
-
 import java.util.ArrayList;
 
 /**
@@ -10,9 +7,8 @@ import java.util.ArrayList;
  */
 
 public class ObjTerr {
-    //com
 
-    ArrayList<ObjDraft> draftList= new ArrayList<ObjDraft>();
+    ArrayList<ObjDraft> draftList= new ArrayList<ObjDraft>();//variable name used as key in JSON (drafList)
 
     public ObjTerr(ArrayList<ObjDraft> list) {
         draftList = list;

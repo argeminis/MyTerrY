@@ -14,22 +14,22 @@ public class ManagerParser {
     public static String JSONType(Object object) {
         Gson gson = new Gson();
         String object_json = gson.toJson(object);
-
         return object_json;
     }
 
-    /**To rebuild components from JSON */
-    public static LatLng LatLngType(double latitude, double longitude){
-        LatLng latLng= new LatLng(latitude,longitude);
+    /** Formating coordinates to build GeoJSON */
+    public static String tobuild_(LatLng latLng) {
+        String s= (latLng.toString()).replace('(','[');
+        s= s.replace(')',']');
+        s= s.substring(9);
 
-        return latLng;
+        return null;
     }
 
     /**To rebuild Terr saved as JSON string */
     public static ObjTerr rebuildTerr(String json_terr) {
         Gson gson = new GsonBuilder().create();
         ObjTerr t = gson.fromJson(json_terr, ObjTerr.class);
-
         return t;
     }
 
@@ -44,4 +44,3 @@ public class ManagerParser {
         /*user_json = settings.getString(id, "");
         object  = gson.fromJson(user_json, User.class);*/
     }
-
