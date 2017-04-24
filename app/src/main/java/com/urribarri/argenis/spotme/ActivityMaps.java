@@ -96,7 +96,7 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                 };
 
         // Initial toposition; TODO: customize
-        LatLng llissa = new LatLng(41.6, 2.24);
+        LatLng llissa = new LatLng(-16.494553, -68.174245);
         mMap.setMinZoomPreference(13);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(llissa));
 
