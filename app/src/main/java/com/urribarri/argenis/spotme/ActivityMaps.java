@@ -8,29 +8,28 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.cocoahero.android.geojson.Feature;
-import com.cocoahero.android.geojson.Geometry;
-import com.cocoahero.android.geojson.Position;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Polygon;
+import com.google.maps.android.geojson.GeoJsonLayer;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback {
 
     private final static int INFO = 0;// request code - ActivityforResult
     private GoogleMap mMap;
-    private ArrayList<LatLng> temp= new ArrayList<LatLng>();//vertex list
+    private GeoJsonLayer geoJsonLayer;
+    private JSONObject jsonObject= new JSONObject();
+    private List<List<LatLng>> latLngs = new ArrayList<List<LatLng>>();
     private ArrayList<ObjDraft> pre_drafts = new ArrayList<ObjDraft>();//component list
     private ArrayList<ObjTerr> pre_terr= new ArrayList<ObjTerr>();// list of component_list
-    private ArrayList<Position> pos= new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,10 +52,11 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap){
         mMap = googleMap;
+        addGeoJSONLayer();
 
         // Confirm button - HIDDEN
-        final Button btn = (Button) findViewById(R.id.btn);
-        btn.setVisibility(View.INVISIBLE);
+        final Button btn_draft = (Button) findViewById(R.id.btn);
+        btn_draft.setVisibility(View.INVISIBLE);
         final Button btn_terr = (Button) findViewById(R.id.btn_terr);
         btn_terr.setVisibility(View.INVISIBLE);
 
@@ -70,12 +70,14 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                         Log.i("SPOTME", "--------------------[onMapClick]");
 
                         mMap.setOnMapLongClickListener(null);// [OFF]
-                        temp.add(latLng);
-                        p(latLng);
+                        List<LatLng> point= new ArrayList<LatLng>();
+                        point.add(latLng);
+                        latLngs.add(point);
 
-                        if (ObjDraft.draftValidation(temp.size()) == true)
-                            btn.setVisibility(View.VISIBLE);
-                        ObjDraft.makePolyline(mMap,temp);
+                        if (ObjDraft.draftValidation(latLngs.size())) {
+                            btn_draft.setVisibility(View.VISIBLE);
+                            //@makeline
+                        }
                     }
                 };
 
@@ -86,32 +88,35 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                         Log.i("SPOTME", "--------------------[onMapLongClick]");
                         mMap.setOnMapLongClickListener(null);
                         // if longclick not null
-                        temp.add(latLng);
-                        p(latLng);
+                        List<LatLng> starting_point= new ArrayList<LatLng>();
+                        starting_point.add(latLng);
+                        latLngs.add(starting_point);
 
                         btn_terr.setVisibility(View.VISIBLE);
                         mMap.setOnMapClickListener(onMapClickListener);
-
                     }
                 };
 
         // Initial toposition; TODO: customize
-        LatLng llissa = new LatLng(-16.494553, -68.174245);
+        LatLng boliviamrkt = new LatLng(-16.494553, -68.174245);
         mMap.setMinZoomPreference(13);
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(llissa));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(boliviamrkt));
 
         // Activating EditMode
         mMap.setOnMapLongClickListener(onMapLongClickListener); // [ON]
         // I/Choreographer: Skipped 30 frames!  The application may be doing too much work on its main thread.
 
         // To save draft component
-        btn.setOnClickListener(new View.OnClickListener() {
+        btn_draft.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (ObjDraft.draftValidation(temp.size())== true){
+                if (ObjDraft.draftValidation(latLngs.size())){
                     v.setVisibility(View.INVISIBLE);
-                    buildDraft();
-
+                    try {
+                        buildDraft();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 } else {
                     ManagerError.errorOnDraftPoints(getBaseContext());
                 }
@@ -123,17 +128,25 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
                 // If there's an incomplete valid draft...
-                if (ObjDraft.draftValidation(temp.size())== true) {
-                    buildDraft();
+                if (ObjDraft.draftValidation(latLngs.size())) {
+                    try {
+                        buildDraft();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
                     //... then continue to the corresponding buildTerr
-                    if (ObjTerr.draftListValidation(pre_drafts.size()) == true) {
+                    if (ObjTerr.draftListValidation(pre_drafts.size())) {
                         switch (pre_drafts.size()) {
                             case 0: // ...NOT HAVING a draft builded
-                                if (ObjDraft.draftValidation(temp.size()) == true) {
-                                    btn.setVisibility(View.INVISIBLE);
+                                if (ObjDraft.draftValidation(latLngs.size())) {
+                                    btn_draft.setVisibility(View.INVISIBLE);
                                     v.setVisibility(View.INVISIBLE);
-                                    buildTerr("onedraftTerrQuick");
+                                    try {
+                                        buildTerr("onedraftTerrQuick");
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
                                     mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                                 } else {
@@ -142,24 +155,32 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                                 break;
 
                             case 1: // ...HAVING one draft builded
-                                btn.setVisibility(View.INVISIBLE);
+                                btn_draft.setVisibility(View.INVISIBLE);
                                 v.setVisibility(View.INVISIBLE);
-                                buildTerr("onedraftTerr");
+                                try {
+                                    buildTerr("onedraftTerr");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
 
                                 /** TODO: ActivityForResult - SAVE (title...)*/
-                                afr();
+                                startActivityForResult();
                                 mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                                 break;
 
                             default:
-                                buildTerr("defaultTerr");// build one list to make a terr (0)
+                                try {
+                                    buildTerr("defaultTerr");// build one list to make a terr (0)
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
                                 //TODO: RESET the working draft
-                                btn.setVisibility(View.INVISIBLE);
+                                btn_draft.setVisibility(View.INVISIBLE);
                                 v.setVisibility(View.INVISIBLE);
 
                                 /** TODO: ActivityForResult - SAVE (title...)*/
-                                afr();
+                                startActivityForResult();
 
                                 mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
@@ -169,14 +190,18 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                         ManagerError.errorOnDraftQuantity(getBaseContext());
                     }
 
-                //...when builded drafts are to compound a terr
-                } else if ((temp.size()==0)&(pre_drafts.size()>0)){
-                    buildTerr("defaultTerr");// build one list to make a terr (0)
-                    btn.setVisibility(View.INVISIBLE);
+                    //...when builded drafts are to compound a terr
+                } else if ((latLngs.size()==0)&(pre_drafts.size()>0)){
+                    try {
+                        buildTerr("defaultTerr");// build one list to make a terr (0)
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    btn_draft.setVisibility(View.INVISIBLE);
                     v.setVisibility(View.INVISIBLE);
 
                     /** TODO: ActivityForResult - SAVE (title...)*/
-                    afr();
+                    startActivityForResult();
                     mMap.setOnMapLongClickListener(onMapLongClickListener);// [ON]
 
                 } else {
@@ -184,25 +209,10 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         });
-
-        mMap.setOnPolygonClickListener(new GoogleMap.OnPolygonClickListener() {
-            @Override
-            public void onPolygonClick(Polygon polygon) {
-                Log.i("SPOTME", "onPolygonClick: "+polygon.getId());
-                Log.i("SPOTME", "onPolygonClick: "+polygon.getPoints().toString());
-            }
-        });
-
     }
 
-    // -------------------
-    /**Parse as position */
-    private void p(LatLng latLng){
-        pos.add(GeoJSONBuilder.toposition(latLng));
-    }
-
-    /**ActivityForResult */
-    private void afr(){
+    /** ActivityForResult **/
+    private void startActivityForResult(){
         Intent i = new Intent(ActivityMaps.this, ActivityMapsSave.class);
         startActivityForResult(i, INFO);
     }
@@ -213,21 +223,15 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        // Comprobamos si el resultado de la segunda actividad es "RESULT_CANCELED".
         if (resultCode == RESULT_CANCELED) {
-            // Si es así mostramos mensaje de cancelado por pantalla.
             Log.i("SPOTME", "");
         } else {
-            // De lo contrario, recogemos el resultado de la segunda actividad.
             String resultado = data.getExtras().getString("RESULTADO");
-            // Y tratamos el resultado en función de si se lanzó para rellenar el
-            // nombre o el apellido.
             switch (requestCode) {
                 case 0:
                     Toast.makeText(ActivityMaps.this, resultado,
                             Toast.LENGTH_LONG).show();
                     break;
-
                 default:
                     Toast.makeText(ActivityMaps.this, "NO SE HA ENVIADO NADA",
                             Toast.LENGTH_LONG).show();
@@ -236,66 +240,42 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    /**To make draft */
-    private void buildDraft(){
-        ObjDraft objDraft= new ObjDraft((ArrayList<LatLng>) temp.clone());
-        pre_drafts.add(objDraft);
-
-        pos.add(pos.get(0));/**GeoJSON implicitly requires that the last coordinate is the same as the first*/
-
-        //TODO: working implementation of the framework (GeoJSON)
-        Object polygon= GeoJSONBuilder.geometry("Polygon",pos);
-
-        Feature feature = new Feature((Geometry) polygon);
-        feature.setIdentifier("MyIdentifier");
-        feature.setProperties(new JSONObject());
-
-        // Convert to formatted JSONObject
-        try {
-            JSONObject geoJSON = feature.toJSON();
-            Log.i("SPOTME:", String.valueOf(geoJSON));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        ObjDraft.makePolygon(mMap,objDraft);
-        temp.clear();
-        pos.clear();
+    /* Add GeoJSONlayer */
+    private void addGeoJSONLayer(){
+        geoJsonLayer= new GeoJsonLayer(mMap,jsonObject);
+        geoJsonLayer.addLayerToMap();
     }
 
-    private void buildTerr(String typeof){
+    /* Remove GeoJSONlayer */
+    private void removeGeoJSONLayer(){
+        geoJsonLayer.removeLayerFromMap();
+    }
+
+    /**To make draft */
+    private void buildDraft() throws JSONException {
+        //TODO: GeoJSON implicitly requires that the last coordinate is the same as the first(ring)
+        ObjDraft objDraft= new ObjDraft(latLngs);
+        ManagerJSON.objectToJsonObject(objDraft);
+        pre_drafts.add(objDraft);
+        latLngs.clear();
+    }
+
+    private void buildTerr(String typeof) throws JSONException {
         switch (typeof) {
             case "onedraftTerrQuick":
                 buildDraft();
-
-                ObjTerr _terr= new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());
-                pre_terr.add(_terr);
+                pre_terr.add(new ObjTerr(pre_drafts));
                 pre_drafts.clear();
-
-                String _output= ManagerParser.JSONType(_terr);
-                ManagerError.log("onedraftTerrQuick",_output);
-
                 break;
 
             case "onedraftTerr":
-                ObjTerr terr_ = new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());
-                pre_terr.add(terr_);
+                pre_terr.add(new ObjTerr(pre_drafts));
                 pre_drafts.clear();
-
-                String output_= ManagerParser.JSONType(terr_);
-
-                ManagerError.log("onedraftTerr",output_);
-
                 break;
 
             case "defaultTerr":
-                ObjTerr terr = new ObjTerr((ArrayList<ObjDraft>) pre_drafts.clone());
-                pre_terr.add(terr);
+                pre_terr.add(new ObjTerr(pre_drafts));
                 pre_drafts.clear();
-
-                String output= ManagerParser.JSONType(terr);
-                ManagerError.log("onedraftTerr",output);
-
                 break;
             }
         }
