@@ -13,12 +13,15 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonLayer;
+import com.google.maps.android.geojson.GeoJsonPoint;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback {
@@ -40,7 +43,6 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
     }
 
     /**
@@ -97,14 +99,13 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                     }
                 };
 
-        // Initial toposition; TODO: customize
+        // Initial position; TODO: customizable
         LatLng boliviamrkt = new LatLng(-16.494553, -68.174245);
         mMap.setMinZoomPreference(13);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(boliviamrkt));
 
         // Activating EditMode
         mMap.setOnMapLongClickListener(onMapLongClickListener); // [ON]
-        // I/Choreographer: Skipped 30 frames!  The application may be doing too much work on its main thread.
 
         // To save draft component
         btn_draft.setOnClickListener(new View.OnClickListener() {
@@ -240,6 +241,22 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    private void _DEV_(){
+
+        GeoJsonPoint point = new GeoJsonPoint(new LatLng(-16.494553, -68.174245));
+        HashMap<String, String> properties = new HashMap<String, String>();
+        properties.put("Ocean", "South Atlantic");
+        GeoJsonFeature pointFeature = new GeoJsonFeature(point, "Origin", properties, null);
+        geoJsonLayer.addFeature(pointFeature);
+
+        /*GeoJsonPolygon geoJsonPolygon = new GeoJsonPolygon(latLngs);
+        HashMap<String, String> properties = new HashMap<String, String>();
+        properties.put("Ocean", "South Atlantic");
+        GeoJsonFeature polygonfeature = new GeoJsonFeature(geoJsonPolygon, "Origin", properties, null);
+        geoJsonLayer.addFeature(polygonfeature);
+        */
+    }
+
     /* Add GeoJSONlayer */
     private void addGeoJSONLayer(){
         geoJsonLayer= new GeoJsonLayer(mMap,jsonObject);
@@ -254,8 +271,11 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
     /**To make draft */
     private void buildDraft() throws JSONException {
         //TODO: GeoJSON implicitly requires that the last coordinate is the same as the first(ring)
+        latLngs.add(latLngs.get(0));
+        _DEV_();
         ObjDraft objDraft= new ObjDraft(latLngs);
         ManagerJSON.objectToJsonObject(objDraft);
+        GeoJSONBuilder.makeGeoJsonPolygon(latLngs);
         pre_drafts.add(objDraft);
         latLngs.clear();
     }
@@ -268,12 +288,7 @@ public class ActivityMaps extends FragmentActivity implements OnMapReadyCallback
                 pre_drafts.clear();
                 break;
 
-            case "onedraftTerr":
-                pre_terr.add(new ObjTerr(pre_drafts));
-                pre_drafts.clear();
-                break;
-
-            case "defaultTerr":
+            case "onedraftTerr": case "defaultTerr":
                 pre_terr.add(new ObjTerr(pre_drafts));
                 pre_drafts.clear();
                 break;

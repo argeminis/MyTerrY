@@ -1,6 +1,7 @@
 package com.urribarri.argenis.spotme;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonLineString;
 import com.google.maps.android.geojson.GeoJsonPolygon;
 
@@ -21,8 +22,16 @@ public class GeoJSONBuilder {
     paquete de tu app como prefijo. Esto garantiza que las claves sean únicas, en
     caso de que tu app interactúe con otras apps.
     */
-    public static GeoJsonPolygon makeGeoJsonPolygon(List<List<LatLng>> latLngs){
-        return new GeoJsonPolygon(latLngs);
+    public static GeoJsonGeometry makeGeoJsonPolygon(final List<List<LatLng>> latLngs){
+
+        GeoJsonGeometry geoJsonGeometry= new GeoJsonGeometry() {
+            @Override
+            public String getType() {
+                return "polygon";
+            }
+            GeoJsonPolygon geoJsonPolygon= new GeoJsonPolygon(latLngs);
+        };
+        return geoJsonGeometry;
     }
 
     public static GeoJsonLineString makeLineString(List<LatLng>latLngs){
